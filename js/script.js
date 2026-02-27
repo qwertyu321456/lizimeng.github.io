@@ -238,4 +238,88 @@ function animate() {
 }
 
 // 倒计时核心逻辑（修复版）
-function updateCount
+function updateCountdown() {
+    const now = new Date();
+    // 构建目标生日日期
+    let targetDate = new Date(BIRTHDAY_YEAR, BIRTHDAY_MONTH, BIRTHDAY_DAY);
+    
+    // 判断今年生日是否已过，已过则计算明年
+    if (now > targetDate) {
+        targetDate.setFullYear(targetDate.getFullYear() + 1);
+    }
+
+    const diff = targetDate - now;
+
+    // 日期到达，显示生日页面并播放特效
+    if (diff < 0) {
+        daysElement.textContent = "00";
+        hoursElement.textContent = "00";
+        minutesElement.textContent = "00";
+        secondsElement.textContent = "00";
+        countdownContainer.classList.add("hidden");
+        birthdayContainer.classList.remove("hidden");
+        
+        // 触发烟花特效
+        setInterval(triggerFirework, 800);
+        return;
+    }
+
+    // 计算天、时、分、秒
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+    // 更新页面数字（补零为两位数）
+    daysElement.textContent = String(days).padStart(2, "0");
+    hoursElement.textContent = String(hours).padStart(2, "0");
+    minutesElement.textContent = String(minutes).padStart(2, "0");
+    secondsElement.textContent = String(seconds).padStart(2, "0");
+}
+
+// 音乐控制逻辑
+function initMusic() {
+    // 手机端需用户交互后播放
+    document.addEventListener('click', () => {
+        if (bgm.paused) {
+            bgm.play().catch(err => console.log("音乐播放需用户交互"));
+        }
+    });
+
+    musicToggle.addEventListener('click', () => {
+        if (bgm.paused) {
+            bgm.play();
+            musicToggle.classList.add("playing");
+        } else {
+            bgm.pause();
+            musicToggle.classList.remove("playing");
+        }
+    });
+}
+
+// 许愿按钮逻辑
+makeWishBtn?.addEventListener('click', () => {
+    alert('生日快乐！你的愿望一定会实现的！');
+    triggerFirework();
+});
+
+// 窗口大小变化监听
+window.addEventListener('resize', () => {
+    resizeCanvas();
+});
+
+// 页面加载初始化
+window.addEventListener('DOMContentLoaded', () => {
+    initEffects();
+    animate();
+    initMusic();
+    // 初始化倒计时并每秒更新
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+});
+
+// 防止内存泄漏
+window.addEventListener('beforeunload', () => {
+    cancelAnimationFrame(animationId);
+});
+
