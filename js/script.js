@@ -1,14 +1,14 @@
-// 全局变量
-const BIRTHDAY_MONTH = 2; // JavaScript中月份从0开始，所以5月是4
-const BIRTHDAY_DAY = 2;
-const CELEBRATION_DAYS = 1; // 生日庆祝持续3天
+// 全局变量 - 已设置为 3月2日
+const BIRTHDAY_YEAR = 2026; // 年份（明年生日）
+const BIRTHDAY_MONTH = 2;   // 3月（JS月份从0开始，3月对应2）
+const BIRTHDAY_DAY = 2;     // 2日
+const CELEBRATION_DAYS = 1; // 庆祝持续1天
 
-// DOM元素
+// DOM元素获取
 const countdownContainer = document.getElementById('countdown-container');
 const birthdayContainer = document.getElementById('birthday-container');
-const birthdayContent = document.getElementById('birthday-content');
-const giftSection = document.getElementById('gift-section');
-const giftBox = document.querySelector('.gift-box');
+const contentContainer = document.querySelector('.content-container');
+const boy = document.querySelector('.boy');
 const daysElement = document.getElementById('days');
 const hoursElement = document.getElementById('hours');
 const minutesElement = document.getElementById('minutes');
@@ -18,13 +18,13 @@ const bgm = document.getElementById('bgm');
 const canvas = document.getElementById('starry-sky');
 const ctx = canvas.getContext('2d');
 const fireworksCanvas = document.getElementById('fireworks-canvas');
-const fireworksCtx = fireworksCanvas ? fireworksCanvas.getContext('2d') : null;
+const fireworksCtx = fireworksCanvas.getContext('2d');
 const loveTree = document.getElementById('love-tree');
 const loveTreeCtx = loveTree ? loveTree.getContext('2d') : null;
 const makeWishBtn = document.getElementById('make-wish-btn');
 
-// 设置Canvas大小
-function setCanvasSize() {
+// 画布尺寸适配
+function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     
@@ -40,9 +40,9 @@ class Star {
         this.x = Math.random() * canvas.width;
         this.y = Math.random() * canvas.height;
         this.size = Math.random() * 2;
-        this.blinkSpeed = Math.random() * 0.05;
+        this.alphaSpeed = Math.random() * 0.05;
         this.alpha = Math.random();
-        this.alphaChange = this.blinkSpeed;
+        this.alphaChange = this.alphaSpeed;
     }
 
     draw() {
@@ -58,14 +58,17 @@ class Star {
         if (this.alpha <= 0 || this.alpha >= 1) {
             this.alphaChange = -this.alphaChange;
         }
+
         // 微小移动
         this.x += (Math.random() - 0.5) * 0.3;
         this.y += (Math.random() - 0.5) * 0.3;
-        // 边界检查
+
+        // 边界检测
         if (this.x < 0) this.x = canvas.width;
         if (this.x > canvas.width) this.x = 0;
         if (this.y < 0) this.y = canvas.height;
         if (this.y > canvas.height) this.y = 0;
+
         this.draw();
     }
 }
@@ -78,18 +81,19 @@ class ShootingStar {
 
     reset() {
         this.x = Math.random() * canvas.width;
-        this.y = 0;
-        this.length = Math.random() * 80 + 50;
-        this.speed = Math.random() * 10 + 10;
+        this.y = Math.random() * 80 + 50;
+        this.length = Math.random() * 60 + 30;
         this.angle = Math.PI / 4 + (Math.random() * Math.PI / 4);
+        this.speed = 10;
         this.alpha = 1;
         this.active = true;
     }
 
     draw() {
         if (!this.active) return;
-        
-        ctx.strokeStyle = `rgba(255, 255, 255, ${this.alpha})`;
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(this.x, this.y);
@@ -97,140 +101,141 @@ class ShootingStar {
         const endY = this.y + Math.sin(this.angle) * this.length;
         ctx.lineTo(endX, endY);
         ctx.stroke();
-    }
-
-    update() {
-        if (!this.active) {
-            if (Math.random() < 0.005) { // 控制流星出现的频率
-                this.reset();
-            }
-            return;
-        }
-        
-        this.x += Math.cos(this.angle) * this.speed;
-        this.y += Math.sin(this.angle) * this.speed;
-        
-        // 淡出效果
-        this.alpha -= 0.01;
-        
-        if (this.y > canvas.height || this.x < 0 || this.x > canvas.width || this.alpha <= 0) {
-            this.active = false;
-        }
-        
-        this.draw();
-    }
-}
-
-// 爱心类
-class Heart {
-    constructor() {
-        this.reset();
-    }
-    
-    reset() {
-        this.x = Math.random() * canvas.width;
-        this.y = canvas.height + 50;
-        this.size = Math.random() * 15 + 15;
-        this.speed = Math.random() * 3 + 1;
-        this.color = `hsl(${340 + Math.random() * 40}, 100%, ${60 + Math.random() * 20}%)`;
-        this.rotation = Math.random() * Math.PI * 2;
-        this.rotationSpeed = (Math.random() - 0.5) * 0.05;
-    }
-    
-    draw() {
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate(this.rotation);
-        ctx.fillStyle = this.color;
-        ctx.beginPath();
-        ctx.bezierCurveTo(0, -this.size / 2, this.size, -this.size, 0, this.size);
-        ctx.bezierCurveTo(-this.size, -this.size, 0, -this.size / 2, 0, this.size / 2);
-        ctx.fill();
         ctx.restore();
     }
-    
+
     update() {
-        this.y -= this.speed;
-        this.rotation += this.rotationSpeed;
+        if (!this.active) return;
+        this.x += Math.cos(this.angle) * this.speed;
+        this.y += Math.sin(this.angle) * this.speed;
+        this.alpha -= 0.01;
         
-        if (this.y < -this.size) {
-            this.reset();
+        if (this.alpha <= 0 || this.x > canvas.width || this.y > canvas.height) {
+            this.active = false;
         }
-        
-        this.draw();
     }
 }
 
 // 烟花粒子类
 class FireworkParticle {
-    constructor(x, y, color) {
+    constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.color = color || `hsl(${Math.random() * 360}, 100%, 70%)`;
+        this.radius = Math.random() * 2 + 1;
+        this.color = `hsl(${Math.random() * 360}, 100%, 70%)`;
         this.velocity = {
             x: (Math.random() - 0.5) * 6,
             y: (Math.random() - 0.5) * 6
         };
         this.alpha = 1;
-        this.decay = Math.random() * 0.02 + 0.01;
-        this.gravity = 0.1;
-        this.size = Math.random() * 3 + 1;
+        this.fadeSpeed = Math.random() * 0.02 + 0.01;
     }
-    
+
     draw() {
+        fireworksCtx.save();
+        fireworksCtx.globalAlpha = this.alpha;
+        fireworksCtx.fillStyle = this.color;
         fireworksCtx.beginPath();
-        fireworksCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        fireworksCtx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
+        fireworksCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
         fireworksCtx.fill();
+        fireworksCtx.restore();
     }
-    
+
     update() {
-        this.velocity.y += this.gravity;
+        this.draw();
         this.x += this.velocity.x;
         this.y += this.velocity.y;
-        this.alpha -= this.decay;
-        this.draw();
+        this.velocity.y += 0.05; // 重力
+        this.alpha -= this.fadeSpeed;
     }
 }
 
-// 烟花类
-class Firework {
-    constructor() {
-        this.reset();
+// 全局特效变量
+let stars = [];
+let shootingStars = [];
+let fireworks = [];
+let animationId;
+
+// 初始化特效
+function initEffects() {
+    resizeCanvas();
+    stars = [];
+    for (let i = 0; i < 150; i++) {
+        stars.push(new Star());
     }
+}
+
+// 绘制星空背景
+function drawStarrySky() {
+    ctx.fillStyle = '#050029';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    reset() {
-        this.x = Math.random() * fireworksCanvas.width;
-        this.y = fireworksCanvas.height;
-        this.targetY = Math.random() * (fireworksCanvas.height * 0.6);
-        this.speed = Math.random() * 2 + 2;
-        this.particles = [];
-        this.color = `${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}`;
-        this.exploded = false;
+    // 绘制星星
+    stars.forEach(star => star.update());
+    
+    // 随机生成流星
+    if (Math.random() < 0.005 && shootingStars.length < 2) {
+        shootingStars.push(new ShootingStar());
     }
-    
-    explode() {
-        this.exploded = true;
-        // 创建爆炸粒子
-        for (let i = 0; i < 100; i++) {
-            this.particles.push(new FireworkParticle(this.x, this.y, this.color));
-        }
-        // 播放爆炸声音效果（可选）
-        if (Math.random() > 0.7) { // 不是每个烟花都播放声音，以避免声音重叠
-            const popSound = new Audio();
-            popSound.volume = 0.3;
-            popSound.play().catch(e => console.log('播放爆炸声受限：', e));
-        }
+    shootingStars = shootingStars.filter(star => star.active);
+    shootingStars.forEach(star => star.update());
+}
+
+// 绘制烟花
+function drawFireworks() {
+    fireworksCtx.clearRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+    fireworks = fireworks.filter(particle => particle.alpha > 0);
+    fireworks.forEach(particle => particle.update());
+}
+
+// 触发烟花
+function triggerFirework() {
+    const x = Math.random() * fireworksCanvas.width;
+    const y = Math.random() * fireworksCanvas.height / 2;
+    for (let i = 0; i < 30; i++) {
+        fireworks.push(new FireworkParticle(x, y));
     }
+}
+
+// 爱心树简易绘制（兼容）
+function drawLoveTree() {
+    if (!loveTreeCtx) return;
+    loveTreeCtx.clearRect(0, 0, loveTree.width, loveTree.height);
+    loveTreeCtx.fillStyle = '#ff6b6b';
     
-    draw() {
-        if (!this.exploded) {
-            fireworksCtx.beginPath();
-            fireworksCtx.arc(this.x, this.y, 3, 0, Math.PI * 2);
-            fireworksCtx.fillStyle = `rgb(${this.color})`;
-            fireworksCtx.fill();
-        }
-    }
-    
-    update() {
-        if (!thi
+    // 简易爱心
+    loveTreeCtx.beginPath();
+    loveTreeCtx.moveTo(loveTree.width / 2, loveTree.height / 2);
+    loveTreeCtx.bezierCurveTo(
+        loveTree.width / 2, loveTree.height / 2 - 20,
+        loveTree.width / 2 - 30, loveTree.height / 2 - 30,
+        loveTree.width / 2 - 30, loveTree.height / 2
+    );
+    loveTreeCtx.bezierCurveTo(
+        loveTree.width / 2 - 30, loveTree.height / 2 + 30,
+        loveTree.width / 2, loveTree.height / 2 + 50,
+        loveTree.width / 2, loveTree.height / 2 + 20
+    );
+    loveTreeCtx.bezierCurveTo(
+        loveTree.width / 2, loveTree.height / 2 + 50,
+        loveTree.width / 2 + 30, loveTree.height / 2 + 30,
+        loveTree.width / 2 + 30, loveTree.height / 2
+    );
+    loveTreeCtx.bezierCurveTo(
+        loveTree.width / 2 + 30, loveTree.height / 2 - 30,
+        loveTree.width / 2, loveTree.height / 2 - 20,
+        loveTree.width / 2, loveTree.height / 2
+    );
+    loveTreeCtx.fill();
+}
+
+// 动画循环
+function animate() {
+    drawStarrySky();
+    drawFireworks();
+    drawLoveTree();
+    animationId = requestAnimationFrame(animate);
+}
+
+// 倒计时核心逻辑（修复版）
+function updateCount
